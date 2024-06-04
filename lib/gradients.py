@@ -9,7 +9,7 @@ class VanillaGrad(object):
 
     def __init__(self, pretrained_model, cuda=False):
         self.pretrained_model = pretrained_model
-        self.features = pretrained_model.features
+        #self.features = pretrained_model.features
         self.cuda = cuda
         #self.pretrained_model.eval()
 
@@ -62,7 +62,6 @@ class SmoothGrad(VanillaGrad):
             else:
                 x_plus_noise = Variable(torch.from_numpy(x_plus_noise), requires_grad=True)
             output = self.pretrained_model(x_plus_noise)
-
             if index is None:
                 index = np.argmax(output.data.cpu().numpy())
 
@@ -76,7 +75,7 @@ class SmoothGrad(VanillaGrad):
 
             if x_plus_noise.grad is not None:
                 x_plus_noise.grad.data.zero_()
-            one_hot.backward(retain_variables=True)
+            one_hot.backward(retain_graph=True)
 
             grad = x_plus_noise.grad.data.cpu().numpy()
 
@@ -130,7 +129,7 @@ class GuidedBackpropGrad(VanillaGrad):
     def __init__(self, pretrained_model, cuda=False):
         super(GuidedBackpropGrad, self).__init__(pretrained_model, cuda)
         for idx, module in self.features._modules.items():
-            if module.__class__.__name__ is 'ReLU':
+            if module.__class__.__name__ == 'ReLU':
                 self.features._modules[idx] = GuidedBackpropReLU()
 
 
@@ -140,7 +139,7 @@ class GuidedBackpropSmoothGrad(SmoothGrad):
         super(GuidedBackpropSmoothGrad, self).__init__(
             pretrained_model, cuda, stdev_spread, n_samples, magnitude)
         for idx, module in self.features._modules.items():
-            if module.__class__.__name__ is 'ReLU':
+            if module.__class__.__name__ == 'ReLU':
                 self.features._modules[idx] = GuidedBackpropReLU()
 
 
